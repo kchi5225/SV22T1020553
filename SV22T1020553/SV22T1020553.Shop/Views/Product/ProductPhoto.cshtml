@@ -1,0 +1,10 @@
+﻿@model ProductDetailViewModel
+
+@{
+    var mainPhoto = Model.Photos.FirstOrDefault()?.Photo;
+    var photo = string.IsNullOrWhiteSpace(mainPhoto) ? (string.IsNullOrWhiteSpace(Model.Product.Photo) ? "nophoto.png" : Model.Product.Photo) : mainPhoto;
+}
+
+<div class="detail-photo">
+    <img src="~/images/products/@photo" alt="@Model.Product.ProductName" />
+</div>

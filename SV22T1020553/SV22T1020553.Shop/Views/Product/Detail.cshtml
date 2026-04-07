@@ -1,0 +1,24 @@
+@model ProductDetailViewModel
+@{
+    ViewData["Title"] = Model.Product.ProductName;
+}
+
+<div class="mb-3 text-end">
+    <a href="javascript:history.back()" class="btn btn-warning fw-bold text-dark shadow-sm">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+       
+        @await Html.PartialAsync("ProductPhoto", Model)
+    </div>
+    <div class="col-lg-6">
+    
+        @await Html.PartialAsync("ProductInfo", Model)
+    </div>
+</div>
+
+
+@await Html.PartialAsync("ProductGallery", Model)

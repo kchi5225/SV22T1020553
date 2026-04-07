@@ -1,0 +1,177 @@
+@model ProductCatalogViewModel
+@{
+    ViewData["Title"] = "Cửa hàng";
+}
+
+<section class="hero-panel mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <span class="hero-kicker">Shop</span>
+            <h1 class="hero-title">Chọn món phù hợp cho đơn hàng hôm nay </h1>
+            <p class="hero-copy"></p>
+        </div>
+        <div class="col-lg-5">
+            <div class="hero-stats">
+                <div>
+                    <strong>@Model.Products.RowCount</strong>
+                    <span>Sản phẩm phù hợp</span>
+                </div>
+                <div>
+                    <strong>@Model.Categories.Count</strong>
+                    <span>Danh mục</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="filter-panel mb-4">
+    <form method="get" asp-action="Index" class="row g-3">
+        <input type="hidden" name="PageSize" value="@Model.SearchInput.PageSize" />
+        <div class="col-lg-4">
+            <label class="form-label">Từ khóa</label>
+            <input class="form-control" name="SearchValue" value="@Model.SearchInput.SearchValue" placeholder="Tên sản phẩm..." />
+        </div>
+        <div class="col-md-4 col-lg-3">
+            <label class="form-label">Danh mục</label>
+            <select class="form-select" name="CategoryID">
+                <option value="0">Tất cả</option>
+                @foreach (var category in Model.Categories)
+                {
+                    if (category.CategoryID == Model.SearchInput.CategoryID)
+                    {
+                        <option value="@category.CategoryID" selected>@category.CategoryName</option>
+                    }
+                    else
+                    {
+                        <option value="@category.CategoryID">@category.CategoryName</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-md-4 col-lg-2">
+            <label class="form-label">Giá từ</label>
+            <input class="form-control" type="number" min="0" name="MinPrice" value="@Model.SearchInput.MinPrice" />
+        </div>
+        <div class="col-md-4 col-lg-2">
+            <label class="form-label">Đến</label>
+            <input class="form-control" type="number" min="0" name="MaxPrice" value="@Model.SearchInput.MaxPrice" />
+        </div>
+        <div class="col-md-4 col-lg-1 d-grid">
+            <label class="form-label d-none d-lg-block">&nbsp;</label>
+            <button type="submit" class="btn btn-dark">Lọc</button>
+        </div>
+    </form>
+</section>
+
+@if (!Model.Products.DataItems.Any())
+{
+    <div class="empty-panel">
+        Không tìm thấy sản phẩm phù hợp với điều kiện lọc hiện tại.
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var product in Model.Products.DataItems)
+        {
+            var photo = string.IsNullOrWhiteSpace(product.Photo) ? "nophoto.png" : product.Photo;
+            <div class="col-sm-6 col-xl-3">
+                <article class="product-card h-100">
+                    <a asp-controller="Product" asp-action="Detail" asp-route-id="@product.ProductID" class="product-thumb">
+                        <img src="~/images/products/@photo" alt="@product.ProductName" />
+                    </a>
+                    <div class="product-body">
+                        <div class="product-meta">@product.Unit</div>
+                        <h3>
+                            <a asp-controller="Product" asp-action="Detail" asp-route-id="@product.ProductID">@product.ProductName</a>
+                        </h3>
+                        <p>@(string.IsNullOrWhiteSpace(product.ProductDescription) ? "Sản phẩm đang được mở bán trong hệ thống." : product.ProductDescription)</p>
+                    </div>
+                    <div class="product-footer">
+                        <div class="product-price">@product.Price.ToString("N0") đ</div>
+                        <form method="post" asp-controller="Cart" asp-action="Add">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@product.ProductID" />
+                            <input type="hidden" name="quantity" value="1" />
+                            <input type="hidden" name="returnUrl" value="@(ViewContext.HttpContext.Request.Path + ViewContext.HttpContext.Request.QueryString.ToString())" />
+                            <button type="submit" class="btn btn-warning w-100">Thêm vào giỏ</button>
+                        </form>
+                    </div>
+                </article>
+            </div>
+        }
+    </div>
+
+    @if (Model.Products.PageCount > 1)
+    {
+        var currentPage = Model.SearchInput.Page;
+        var totalPages = Model.Products.PageCount;
+
+        <nav class="mt-4">
+            <ul class="pagination pagination-modern justify-content-center">
+
+                @* Nút Lùi (Previous) *@
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <a class="page-link"
+                       asp-action="Index"
+                       asp-route-page="@(currentPage - 1)"
+                       asp-route-pageSize="@Model.SearchInput.PageSize"
+                       asp-route-searchValue="@Model.SearchInput.SearchValue"
+                       asp-route-categoryID="@Model.SearchInput.CategoryID"
+                       asp-route-minPrice="@Model.SearchInput.MinPrice"
+                       asp-route-maxPrice="@Model.SearchInput.MaxPrice">
+                        &laquo;
+                    </a>
+                </li>
+
+                @* Danh sách các số trang *@
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    // Luôn hiện trang 1, trang cuối và các trang sát trang hiện tại
+                    if (i == 1 || i == totalPages || Math.Abs(i - currentPage) <= 1)
+                    {
+                        var isActive = i == currentPage;
+                        <li class="page-item @(isActive ? "active" : "")">
+                            <a class="page-link"
+                               asp-action="Index"
+                               asp-route-page="@i"
+                               asp-route-pageSize="@Model.SearchInput.PageSize"
+                               asp-route-searchValue="@Model.SearchInput.SearchValue"
+                               asp-route-categoryID="@Model.SearchInput.CategoryID"
+                               asp-route-minPrice="@Model.SearchInput.MinPrice"
+                               asp-route-maxPrice="@Model.SearchInput.MaxPrice">
+                                @i
+                            </a>
+                        </li>
+                    }
+                    // In dấu "..." ở nửa đầu
+                    else if (i == 2 && currentPage > 3)
+                    {
+                        <li class="page-item disabled"><span class="page-link border-0 text-muted">...</span></li>
+                    }
+                    // In dấu "..." ở nửa sau
+                    else if (i == totalPages - 1 && currentPage < totalPages - 2)
+                    {
+                        <li class="page-item disabled"><span class="page-link border-0 text-muted">...</span></li>
+                    }
+                }
+
+                @* Nút Tiến (Next) *@
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    <a class="page-link"
+                       asp-action="Index"
+                       asp-route-page="@(currentPage + 1)"
+                       asp-route-pageSize="@Model.SearchInput.PageSize"
+                       asp-route-searchValue="@Model.SearchInput.SearchValue"
+                       asp-route-categoryID="@Model.SearchInput.CategoryID"
+                       asp-route-minPrice="@Model.SearchInput.MinPrice"
+                       asp-route-maxPrice="@Model.SearchInput.MaxPrice">
+                        &raquo;
+                    </a>
+                </li>
+
+            </ul>
+        </nav>
+    }
+}

@@ -1,0 +1,161 @@
+﻿using Dapper;
+using SV22T1020553.DataLayers.Interfaces;
+using SV22T1020553.DataLayers.SQLServer;
+using SV22T1020553.Models.Common;
+using SV22T1020553.Models.Partner;
+
+namespace SV22T1020553.DataLayers.SQLServer
+{
+    public class CustomerRepository : BaseRepository, ICustomerRepository
+    {
+        public CustomerRepository(string connectionString) : base(connectionString)
+        {
+        }
+
+        public async Task<int> AddAsync(Customer data)
+        {
+            using var connection = GetConnection();
+
+            string sql = @"INSERT INTO Customers(CustomerName, ContactName, Province, Address, Phone, Email)
+                           VALUES(@CustomerName,@ContactName,@Province,@Address,@Phone,@Email);
+                           SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+            return await connection.ExecuteScalarAsync<int>(sql, data);
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            using var connection = GetConnection();
+
+            string sql = "DELETE FROM Customers WHERE CustomerID=@id";
+
+            return await connection.ExecuteAsync(sql, new { id }) > 0;
+        }
+
+        public async Task<Customer?> GetAsync(int id)
+        {
+            using var connection = GetConnection();
+
+            string sql = "SELECT * FROM Customers WHERE CustomerID=@id";
+
+            return await connection.QueryFirstOrDefaultAsync<Customer>(sql, new { id });
+        }
+
+        public async Task<bool> UpdateAsync(Customer data)
+        {
+            using (var connection = GetConnection())
+            {
+                // 🛠 QUAN TRỌNG: Bạn phải thêm "IsLocked = @IsLocked" vào sau Phone hoặc Email
+                string sql = @"UPDATE Customers
+                       SET CustomerName = @CustomerName,
+                           ContactName = @ContactName,
+                           Province = @Province,
+                           Address = @Address,
+                           Phone = @Phone,
+                           Email = @Email,
+                           IsLocked = @IsLocked
+                       WHERE CustomerID = @CustomerID";
+
+                // Khi thực hiện câu lệnh này, Dapper (hoặc thư mục bạn dùng) 
+                // sẽ tự bốc giá trị IsLocked từ object 'data' để truyền vào @IsLocked
+                var result = await connection.ExecuteAsync(sql, data);
+                return result > 0;
+            }
+        }
+
+        public async Task<bool> ValidateEmailAsync(string email, int id = 0)
+        {
+            using var connection = GetConnection();
+
+            string sql = @"SELECT COUNT(*)
+                           FROM Customers
+                           WHERE Email=@email AND CustomerID<>@id";
+
+            int count = await connection.ExecuteScalarAsync<int>(sql, new { email, id });
+
+            return count == 0;
+        }
+
+        public async Task<bool> IsUsedAsync(int id)
+        {
+            using var connection = GetConnection();
+
+            string sql = "SELECT COUNT(*) FROM Orders WHERE CustomerID=@id";
+
+            int count = await connection.ExecuteScalarAsync<int>(sql, new { id });
+
+            return count > 0;
+        }
+
+        public async Task<PagedResult<Customer>> ListAsync(PaginationSearch input)
+        {
+            using var connection = GetConnection();
+
+            string search = $"%{input.SearchValue ?? ""}%";
+
+            string sqlCount = @"SELECT COUNT(*)
+                        FROM Customers
+                        WHERE CustomerName LIKE @search
+                           OR ContactName LIKE @search";
+
+            string sqlData = @"SELECT *
+                       FROM Customers
+                       WHERE CustomerName LIKE @search
+                          OR ContactName LIKE @search
+                       ORDER BY CustomerName";
+
+            // NẾU CÓ PHÂN TRANG (PageSize > 0) THÌ MỚI NỐI THÊM LỆNH OFFSET ... FETCH NEXT
+            if (input.PageSize > 0)
+            {
+                sqlData += " OFFSET @offset ROWS FETCH NEXT @pagesize ROWS ONLY";
+            }
+
+            int count = await connection.ExecuteScalarAsync<int>(sqlCount, new { search });
+
+            var data = await connection.QueryAsync<Customer>(sqlData, new
+            {
+                search,
+                offset = (input.Page - 1) * input.PageSize,
+                pagesize = input.PageSize
+            });
+
+            return new PagedResult<Customer>
+            {
+                Page = input.Page,
+                PageSize = input.PageSize,
+                RowCount = count,
+                DataItems = data.ToList()
+            };
+        }
+        public async Task<bool> ChangePasswordAsync(string email, string password)
+        {
+            using var connection = GetConnection();
+
+            string sql = @"UPDATE Customers
+                   SET Password = @password
+                   WHERE Email = @email";
+
+            return await connection.ExecuteAsync(sql, new { email, password }) > 0;
+        }
+        public async Task<bool> VerifyPasswordAsync(string email, string password)
+        {
+            using var connection = GetConnection();
+
+            string sql = @"SELECT COUNT(*)
+                   FROM Customers
+                   WHERE Email = @email AND Password = @password";
+
+            int count = await connection.ExecuteScalarAsync<int>(sql, new { email, password });
+
+            return count > 0;
+        }
+
+        public async Task<Customer?> GetByEmailAsync(string email)
+        {
+            using var connection = GetConnection();
+            // Lấy chính xác khách hàng có Email tương ứng
+            string sql = "SELECT * FROM Customers WHERE Email = @email";
+            return await connection.QueryFirstOrDefaultAsync<Customer>(sql, new { email });
+        }
+    }
+}

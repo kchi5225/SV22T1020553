@@ -1,0 +1,50 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập khách hàng</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="auth-page">
+    <div class="auth-card">
+        <span class="hero-kicker">Customer Login</span>
+        <h1>Đăng nhập </h1>
+
+        <form method="post" asp-action="Login">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input class="form-control" asp-for="UserName" autofocus />
+                <span asp-validation-for="UserName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Mật khẩu</label>
+                <input class="form-control" asp-for="Password" type="password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success text-center p-2 mb-3 small">
+                    @TempData["SuccessMessage"]
+                </div>
+            }
+
+            <div class="text-danger mb-3">@Html.ValidationMessage("LoginError")</div>
+            <button class="btn btn-warning w-100" type="submit">Đăng nhập</button>
+        </form>
+
+        <a class="btn btn-link mt-3 p-0" asp-controller="Home" asp-action="Index">Quay lại cửa hàng</a>
+    </div>
+
+    <partial name="_ValidationScriptsPartial" />
+</body>
+</html>

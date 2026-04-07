@@ -1,0 +1,107 @@
+@{
+    var currentUser = User.GetUserData();
+    var cart = ShoppingCartServices.GetShoppingCart();
+    var cartQuantity = cart?.Sum(item => item.Quantity) ?? 0;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - LiteCommerce Shop</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="shop-header">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-dark px-0 py-3">
+                <a class="navbar-brand shop-brand" asp-controller="Home" asp-action="Index">LiteCommerce</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <form class="d-flex ms-lg-4 me-lg-auto mt-3 mt-lg-0 shop-search" method="get" asp-controller="Home" asp-action="Index">
+                        <input class="form-control" type="search" name="SearchValue" value="@Context.Request.Query["SearchValue"]" placeholder="Tìm sản phẩm..." />
+                        <button class="btn btn-warning" type="submit">Tìm</button>
+                    </form>
+                    <ul class="navbar-nav align-items-lg-center gap-lg-2 mt-3 mt-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Cửa hàng</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link position-relative" asp-controller="Cart" asp-action="Index">
+                                <i class="bi bi-cart3"></i> Giỏ hàng
+                                <span class="cart-badge badge rounded-pill bg-danger">@cartQuantity</span>
+                            </a>
+                        </li>
+                        @if (currentUser == null)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Register">Đăng ký</a>
+                            </li>
+                            <li class="nav-item ms-2">
+                                <a class="btn btn-light btn-sm px-3 mt-1" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle fw-bold text-white" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle"></i> @currentUser.DisplayName
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Customer" asp-action="Profile">
+                                            <i class="bi bi-person me-2 text-primary"></i> Thông tin cá nhân
+                                        </a>
+                                    </li>
+                                    
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Cart" asp-action="OrderHistory">
+                                            <i class="bi bi-clock-history me-2 text-success"></i> Lịch sử mua hàng
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Customer" asp-action="ChangePassword">
+                                            <i class="bi bi-key me-2 text-warning"></i> Đổi mật khẩu
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post">
+                                            <button type="submit" class="dropdown-item py-2 text-danger">
+                                                <i class="bi bi-box-arrow-right me-2"></i> Đăng xuất
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="shop-main">
+        <div class="container py-4" style="min-height: 75vh;">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="shop-footer mt-auto py-4 border-top bg-light">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <span class="fw-bold">LiteCommerce Shop</span>
+            <span class="text-muted small text-center text-md-end">Mua sắm nhanh, giao hàng gọn, giao diện dành cho khách hàng.</span>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

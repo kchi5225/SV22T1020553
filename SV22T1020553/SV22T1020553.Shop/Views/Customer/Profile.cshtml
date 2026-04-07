@@ -1,0 +1,47 @@
+﻿@model CustomerProfileViewModel
+
+<h2>Thông tin cá nhân</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<form method="post">
+    <input type="hidden" asp-for="CustomerID" />
+
+    <div class="mb-3">
+        <label>Tên khách hàng</label>
+        <input class="form-control" asp-for="CustomerName" />
+        <span class="text-danger" asp-validation-for="CustomerName"></span>
+    </div>
+
+    <div class="mb-3">
+        <label>Người liên hệ</label>
+        <input class="form-control" asp-for="ContactName" />
+    </div>
+
+    <div class="mb-3">
+        <label>Email</label>
+        <input class="form-control" asp-for="Email" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label>Số điện thoại</label>
+        <input class="form-control" asp-for="Phone" />
+    </div>
+
+    <div class="mb-3">
+        <label>Địa chỉ</label>
+        <input class="form-control" asp-for="Address" />
+    </div>
+
+    <div class="mb-3">
+        <label>Tỉnh/Thành</label>
+        <input class="form-control" asp-for="Province" />
+    </div>
+
+    <button class="btn btn-primary">Cập nhật</button>
+</form>

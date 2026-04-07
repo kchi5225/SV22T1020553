@@ -1,0 +1,124 @@
+﻿@model ProductSearchInput
+
+@{
+    ViewBag.Title = "Quản lý Mặt hàng";
+}
+
+@section PageToolBar {
+    <a href="~/Product/Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>
+        Bổ sung
+    </a>
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+
+        <form id="formSearch"
+              method="get"
+              action="~/Product/Search"
+              data-target="searchResult"
+              onsubmit="paginationSearch(event, this, 1)">
+
+            <input type="hidden" asp-for="PageSize" />
+
+            <div class="row g-2">
+
+                <div class="col-md-3">
+                    <label class="form-label">Loại hàng</label>
+                    <select class="form-select" asp-for="CategoryID" asp-items="await SelectListHelper.Categories()">
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Nhà cung cấp</label>
+                    <select class="form-select" asp-for="SupplierID" asp-items="await SelectListHelper.Suppliers()">
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Khoảng giá</label>
+
+                    <div class="input-group">
+                        <input type="hidden" id="MinPriceHidden" name="MinPrice" value="@(Model.MinPrice > 0 ? Model.MinPrice : "")" />
+                        <input type="text" id="MinPriceDisplay" class="form-control" placeholder="Từ" autocomplete="off" />
+
+                        <span class="input-group-text">-</span>
+
+                        <input type="hidden" id="MaxPriceHidden" name="MaxPrice" value="@(Model.MaxPrice > 0 ? Model.MaxPrice : "")" />
+                        <input type="text" id="MaxPriceDisplay" class="form-control" placeholder="Đến" autocomplete="off" />
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Tên mặt hàng</label>
+
+                    <div class="input-group">
+                        <input asp-for="SearchValue"
+                               class="form-control"
+                               placeholder="Tên mặt hàng..." autofocus autocomplete="off" />
+
+                        <button class="btn btn-info" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<div id="searchResult"></div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Khởi chạy tìm kiếm lần đầu
+            paginationSearch(null, document.getElementById("formSearch"), @Model.Page);
+
+            // ==========================================
+            // LOGIC ĐỊNH DẠNG TIỀN HOÀN HẢO
+            // ==========================================
+            function formatNumber(num) {
+                if (!num) return "";
+                return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            }
+
+            function setupMoneyField(displayId, hiddenId) {
+                let displayObj = document.getElementById(displayId);
+                let hiddenObj = document.getElementById(hiddenId);
+
+                // 1. Khi vừa tải trang: Lấy dữ liệu thật từ thẻ ẩn, gắn dấu chấm rồi đưa lên thẻ hiển thị
+                if (hiddenObj.value) {
+                    displayObj.value = formatNumber(hiddenObj.value);
+                }
+
+                // 2. KHI CLICK VÀO Ô NHẬP (Focus): Tạm thời xóa hết dấu chấm.
+                // Điều này giúp bạn thêm/xóa/sửa số tự do mà con trỏ chuột ĐỨNG IM TUYỆT ĐỐI.
+                displayObj.addEventListener("focus", function () {
+                    this.value = hiddenObj.value;
+                });
+
+                // 3. TRONG LÚC GÕ (Input): Chỉ cho gõ số, lưu song song dữ liệu số nguyên vào thẻ Ẩn
+                displayObj.addEventListener("input", function () {
+                    let rawValue = this.value.replace(/\D/g, ""); // Dọn sạch ký tự lạ
+                    this.value = rawValue;       // Ép ô hiện tại chỉ có số
+                    hiddenObj.value = rawValue;  // Đẩy số vào thẻ ẩn chờ gửi đi
+                });
+
+                // 4. KHI CLICK RA NGOÀI (Blur): Làm đẹp giao diện bằng cách lắp lại dấu chấm
+                displayObj.addEventListener("blur", function () {
+                    if (this.value) {
+                        this.value = formatNumber(this.value);
+                    }
+                });
+            }
+
+            // Kích hoạt logic cho 2 ô Khoảng Giá
+            setupMoneyField("MinPriceDisplay", "MinPriceHidden");
+            setupMoneyField("MaxPriceDisplay", "MaxPriceHidden");
+        });
+    </script>
+}

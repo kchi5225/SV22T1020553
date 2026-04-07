@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Views\ProductContronller\**" />
+    <Content Remove="Views\ProductContronller\**" />
+    <EmbeddedResource Remove="Views\ProductContronller\**" />
+    <None Remove="Views\ProductContronller\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SV22T1020553.BusinessLayers\SV22T1020553.BusinessLayers.csproj" />
+    <ProjectReference Include="..\SV22T1020553.Models\SV22T1020553.Models.csproj" />
+  </ItemGroup>
+
+</Project>

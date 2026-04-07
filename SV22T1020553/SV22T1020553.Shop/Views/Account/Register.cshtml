@@ -1,0 +1,74 @@
+﻿@model SV22T1020553.Shop.Models.RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký tài khoản";
+}
+
+<style>
+    header, nav, footer, .navbar {
+        display: none !important;
+    }
+
+    body {
+        background-color: #fcfaf5 !important;
+    }
+</style>
+
+<div class="d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+
+    <div class="card shadow-sm border-0 rounded-4" style="width: 100%; max-width: 450px;">
+        <div class="card-body p-4 p-sm-5">
+
+            <span class="badge text-warning bg-warning bg-opacity-10 px-3 py-2 rounded-pill mb-3 text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">
+                Customer Register
+            </span>
+
+            <h2 class="fw-bolder mb-2" style="font-size: 2.2rem; color: #212529;">Đăng ký để mua hàng</h2>
+
+            <p class="text-muted small mb-4" style="line-height: 1.5;">
+                Tạo tài khoản mới để trải nghiệm mua sắm nhanh chóng và quản lý đơn hàng trên hệ thống LiteCommerce.
+            </p>
+
+            <form method="post" asp-action="Register">
+
+                @if (!ViewData.ModelState.IsValid || !string.IsNullOrEmpty(ViewBag.Error))
+                {
+                    <div class="alert alert-danger p-2 mb-3 small">
+                        @Html.ValidationSummary(false, "", new { @class = "text-danger list-unstyled mb-0" })
+                        @if (!string.IsNullOrEmpty(ViewBag.Error))
+                        {
+                            <span>@ViewBag.Error</span>
+                        }
+                    </div>
+                }
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-dark">Họ và tên</label>
+                    <input type="text" class="form-control" asp-for="DisplayName" placeholder="Nhập họ và tên..." required />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-dark">Email</label>
+                    <input type="email" class="form-control" asp-for="Email" placeholder="Nhập địa chỉ email..." required />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-dark">Mật khẩu</label>
+                    <input type="password" class="form-control" asp-for="Password" placeholder="Tạo mật khẩu..." required />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-dark">Xác nhận mật khẩu</label>
+                    <input type="password" class="form-control" asp-for="ConfirmPassword" placeholder="Nhập lại mật khẩu..." required />
+                </div>
+
+                <button type="submit" class="btn btn-warning w-100 fw-bold py-2 mb-4">Đăng ký</button>
+
+                <div class="d-flex justify-content-between align-items-center small">
+                    <a href="~/" class="text-decoration-none text-primary">Quay lại cửa hàng</a>
+                    <a asp-action="Login" class="text-decoration-none text-primary fw-bold">Đã có tài khoản?</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>

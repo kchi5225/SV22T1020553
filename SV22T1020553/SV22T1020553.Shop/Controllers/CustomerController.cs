@@ -8,7 +8,6 @@ namespace SV22T1020553.Shop.Controllers
     [Authorize]
     public class CustomerController : Controller
     {
-        
         [HttpGet]
         public async Task<IActionResult> Profile()
         {
@@ -24,6 +23,9 @@ namespace SV22T1020553.Shop.Controllers
             var customer = await PartnerDataService.GetCustomerAsync(customerId);
             if (customer == null)
                 return RedirectToAction("Login", "Account");
+
+            // 1. SỬA Ở ĐÂY: LUÔN LUÔN nạp danh sách tỉnh khi mở trang Profile
+            ViewBag.Provinces = await DictionaryDataService.ListProvincesAsync();
 
             var model = new CustomerProfileViewModel
             {
@@ -50,7 +52,11 @@ namespace SV22T1020553.Shop.Controllers
                 ModelState.AddModelError(nameof(model.ContactName), "Vui lòng nhập tên liên hệ");
 
             if (!ModelState.IsValid)
+            {
+                // 2. SỬA Ở ĐÂY: Phải nạp lại danh sách tỉnh nếu người dùng nhập lỗi form
+                ViewBag.Provinces = await DictionaryDataService.ListProvincesAsync();
                 return View(model);
+            }
 
             var customer = new Customer
             {
@@ -104,7 +110,6 @@ namespace SV22T1020553.Shop.Controllers
                 return View(model);
             }
 
-            
             bool result = await SecurityDataService.ChangeCustomerPasswordAsync(userData.UserName, model.NewPassword);
             if (!result)
             {

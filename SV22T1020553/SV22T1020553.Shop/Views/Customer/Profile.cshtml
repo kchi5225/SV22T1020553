@@ -4,9 +4,9 @@
 
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success">
-        @TempData["SuccessMessage"]
-    </div>
+<div class="alert alert-success">
+    @TempData["SuccessMessage"]
+</div>
 }
 
 <form method="post">
@@ -38,9 +38,19 @@
         <input class="form-control" asp-for="Address" />
     </div>
 
-    <div class="mb-3">
-        <label>Tỉnh/Thành</label>
-        <input class="form-control" asp-for="Province" />
+    <div class="form-group">
+        <label>Tỉnh/Thành:</label>
+        <select class="form-control" asp-for="Province">
+            <option value="">-- Chọn Tỉnh/Thành --</option>
+            @if (ViewBag.Provinces != null)
+            {
+                foreach (var item in ViewBag.Provinces)
+                {
+            <option value="@item.ProvinceName">@item.ProvinceName</option>
+                }
+            }
+        </select>
+        <span asp-validation-for="Province" class="text-danger"></span>
     </div>
 
     <button class="btn btn-primary">Cập nhật</button>

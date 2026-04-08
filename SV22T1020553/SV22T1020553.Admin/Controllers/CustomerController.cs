@@ -1,200 +1,124 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SV22T1020553.Admin;
-using SV22T1020553.Models.Common;
+using SV22T1020553.BusinessLayers;
 using SV22T1020553.Models.Partner;
 
-namespace SV22T1020553.Admin.Controllers
+namespace SV22T1020553.Shop.Controllers
 {
-    /// <summary>
-    /// Các chuc nang liên quan đến khách hàng
-    /// </summary>
-    [Authorize(Roles = $"{WebUserRoles.Administrator},{WebUserRoles.Sales}")]
+    [Authorize]
     public class CustomerController : Controller
     {
-        public const string SEARCH_CUSTOMER = "SearchCustomer";
-        /// <summary>
-        /// Nhập đầu vào tìm kiếm và hiển thị kết quả tìm
-        /// </summary>
-        /// <returns></returns>
-        public IActionResult Index()
+        [HttpGet]
+        public async Task<IActionResult> Profile()
         {
-            var input = ApplicationContext.GetSessionData<PaginationSearch>(SEARCH_CUSTOMER);
-            if (input == null)
-            {
-                input = new PaginationSearch()
-                {
-                    Page = 1,
-                    PageSize = ApplicationContext.PageSize,
-                    SearchValue = ""
-                };
-            }
-            return View(input);
-        }
-        /// <summary>
-        /// Tìm kiếm và trả về kết quả phân trang
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        public async Task<IActionResult> Search(PaginationSearch input)
-        {
-            //Tìm kiếm
-            var result = await PartnerDataService.ListCustomersAsync(input);
+            var userData = User.GetUserData();
+            if (userData == null)
+                return RedirectToAction("Login", "Account");
 
-            //Lưu lại điều kiện tìm kiếm vào session
-            ApplicationContext.SetSessionData(SEARCH_CUSTOMER, input);
+            int customerId = int.TryParse(userData?.UserId, out var id) ? id : 0;
 
-            //Trả về kết quả cho view
-            return View(result);
-        }
+            if (customerId <= 0)
+                return RedirectToAction("Login", "Account");
 
-        /// <summary>
-        /// Tạo khách hàng mới
-        /// </summary>
-        /// <returns></returns>
-        public IActionResult Create()
-        {
-            ViewBag.Title = "Thêm khách hàng";
-            var model = new Customer()
-            {
-                CustomerID = 0
-            };
-            return View("Edit", model);
-        }
-        /// <summary>
-        /// Cập nhật thông tin khách hàng
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public async Task<IActionResult> Edit(int id)
-        {
-            ViewBag.Title = "Cập nhật thông tin khách hàng";
-            var model = await PartnerDataService.GetCustomerAsync(id);
-            if (model == null)
-                return RedirectToAction("Index");
-
-            return View(model);
-        }
-        /// <summary>
-        /// Luu du liệu
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<IActionResult> SaveData(Customer data)
-        {
-            ViewBag.Title = data.CustomerID == 0 ? "Bổ sung khách hàng" : "Cập nhật thông tin khách hàng";
-
-            //Kiểm tra tính hop lệ của dữ liệu đầu vào
-            //Su dụng ModelState để kiểm soát lỗi và thông báo lỗi(Chỉ su dụng khi có model, nếu dùng AJAX thì không dùng)
-            if (string.IsNullOrWhiteSpace(data.CustomerName))
-                ModelState.AddModelError(nameof(data.CustomerName), "Vui lòng nhập tên khách hàng");
-
-            if (string.IsNullOrWhiteSpace(data.Email))
-                ModelState.AddModelError(nameof(data.Email), "Vui lòng nhập email khách hàng");
-            else if (!(await PartnerDataService.ValidateCustomerEmailAsync(data.Email, data.CustomerID)))
-                ModelState.AddModelError(nameof(data.Email), "Email đã được sử dụng bởi khách hàng khác");
-
-            if (string.IsNullOrWhiteSpace(data.Province))
-                ModelState.AddModelError(nameof(data.Province), "Vui lòng chọn Tỉnh/Thành phố");
-
-            //Điều chỉnh du liệu theo logic/quy uoc của hệ thống
-            if (string.IsNullOrEmpty(data.ContactName)) data.ContactName = "";
-            if (string.IsNullOrEmpty(data.Phone)) data.Phone = "";
-            if (string.IsNullOrEmpty(data.Address)) data.Address = "";
-
-            //Nếu có lỗi thì thông báo cho nguoi dùng (qua Vie), không luu du liệu
-            if (!ModelState.IsValid)
-            {
-                return View("Edit", data);
-            }
-
-
-            //Luu du liệu vào CSDL
-            if (data.CustomerID == 0)
-            {
-                await PartnerDataService.AddCustomerAsync(data);
-                PaginationSearch input = new PaginationSearch()
-                {
-                    Page = 1,
-                    PageSize = ApplicationContext.PageSize,
-                    SearchValue = data.CustomerName
-                };
-                ApplicationContext.SetSessionData(SEARCH_CUSTOMER, input);
-            }
-            else
-            {
-                await PartnerDataService.UpdateCustomerAsync(data);
-            }
-            return RedirectToAction("Index");
-        }
-        /// <summary>
-        /// Xóa khách hàng
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        /// <summary>
-        /// Xóa khách hàng
-        /// </summary>
-        public async Task<IActionResult> Delete(int id)
-        {
-            if (Request.Method == "POST")
-            {
-                await PartnerDataService.DeleteCustomerAsync(id);
-                return RedirectToAction("Index");
-            }
-
-            var model = await PartnerDataService.GetCustomerAsync(id);
-            if (model == null)
-                return RedirectToAction("Index");
-
-            // Sửa AllowDelete thành CanDelete cho giống với bên View nhé
-            bool canDelete = !(await PartnerDataService.IsUsedCustomerAsync(id));
-            ViewBag.CanDelete = canDelete;
-
-            return View(model);
-        }
-        public async Task<IActionResult> ChangePassword(int id)
-        {
-            ViewBag.Title = "Đổi mật khẩu khách hàng";
-
-            var model = await PartnerDataService.GetCustomerAsync(id);
-            if (model == null)
-                return RedirectToAction("Index");
-
-            return View(model);
-        }
-
-        [HttpPost]
-        [HttpPost]
-        public async Task<IActionResult> ChangePassword(int id, string password, string confirmPassword)
-        {
-            var customer = await PartnerDataService.GetCustomerAsync(id);
+            var customer = await PartnerDataService.GetCustomerAsync(customerId);
             if (customer == null)
-                return RedirectToAction("Index");
+                return RedirectToAction("Login", "Account");
 
-            ViewBag.Title = "Đổi mật khẩu khách hàng";
+            // 1. SỬA Ở ĐÂY: LUÔN LUÔN nạp danh sách tỉnh khi mở trang Profile
+            ViewBag.Provinces = await DictionaryDataService.ListProvincesAsync();
 
-            // 1. Validate mật khẩu mới
-            if (string.IsNullOrWhiteSpace(password))
-                ModelState.AddModelError("password", "Vui lòng nhập mật khẩu mới");
+            var model = new CustomerProfileViewModel
+            {
+                CustomerID = customer.CustomerID,
+                CustomerName = customer.CustomerName,
+                ContactName = customer.ContactName,
+                Province = customer.Province,
+                Address = customer.Address,
+                Phone = customer.Phone,
+                Email = customer.Email
+            };
 
-            if (password != confirmPassword)
-                ModelState.AddModelError("confirmPassword", "Mật khẩu xác nhận không khớp");
+            return View(model);
+        }
 
-            // Nếu có lỗi thì hiển thị lại form
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Profile(CustomerProfileViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.CustomerName))
+                ModelState.AddModelError(nameof(model.CustomerName), "Vui lòng nhập tên khách hàng");
+
+            if (string.IsNullOrWhiteSpace(model.ContactName))
+                ModelState.AddModelError(nameof(model.ContactName), "Vui lòng nhập tên liên hệ");
+
             if (!ModelState.IsValid)
-                return View(customer);
+            {
+                // 2. SỬA Ở ĐÂY: Phải nạp lại danh sách tỉnh nếu người dùng nhập lỗi form
+                ViewBag.Provinces = await DictionaryDataService.ListProvincesAsync();
+                return View(model);
+            }
 
-            // 2. Cập nhật mật khẩu mới (Bỏ qua bước kiểm tra mật khẩu cũ)
-            // ⚠️ LƯU Ý QUAN TRỌNG VỀ ĐĂNG NHẬP:
-            // Nếu trang web của khách hàng có dùng mã hóa mật khẩu (ví dụ MD5) để đăng nhập,
-            // bạn phải thêm 1 dòng mã hóa biến 'password' ở đây trước khi lưu. 
-            // Ví dụ: password = EncodeHelper.ComputeMD5(password);
+            var customer = new Customer
+            {
+                CustomerID = model.CustomerID,
+                CustomerName = model.CustomerName,
+                ContactName = model.ContactName,
+                Province = model.Province,
+                Address = model.Address,
+                Phone = model.Phone,
+                Email = model.Email
+            };
 
-            await PartnerDataService.ChangeCustomerPasswordAsync(customer.Email, password);
+            await PartnerDataService.UpdateCustomerAsync(customer);
 
-            return RedirectToAction("Index");
+            TempData["SuccessMessage"] = "Cập nhật thông tin thành công";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            return View(new ChangePasswordViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.OldPassword))
+                ModelState.AddModelError(nameof(model.OldPassword), "Vui lòng nhập mật khẩu cũ");
+
+            if (string.IsNullOrWhiteSpace(model.NewPassword))
+                ModelState.AddModelError(nameof(model.NewPassword), "Vui lòng nhập mật khẩu mới");
+
+            if (model.NewPassword != model.ConfirmPassword)
+                ModelState.AddModelError(nameof(model.ConfirmPassword), "Xác nhận mật khẩu không đúng");
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var userData = User.GetUserData();
+            int customerId = int.TryParse(userData?.UserId, out var id) ? id : 0;
+
+            if (customerId <= 0)
+                return RedirectToAction("Login", "Account");
+
+            var validUser = await SecurityDataService.AuthenticateCustomerAsync(userData.UserName, model.OldPassword);
+            if (validUser == null)
+            {
+                ModelState.AddModelError(nameof(model.OldPassword), "Mật khẩu cũ không đúng");
+                return View(model);
+            }
+
+            bool result = await SecurityDataService.ChangeCustomerPasswordAsync(userData.UserName, model.NewPassword);
+            if (!result)
+            {
+                ModelState.AddModelError("", "Đổi mật khẩu thất bại");
+                return View(model);
+            }
+
+            TempData["SuccessMessage"] = "Đổi mật khẩu thành công";
+            return RedirectToAction(nameof(Profile));
         }
     }
 }

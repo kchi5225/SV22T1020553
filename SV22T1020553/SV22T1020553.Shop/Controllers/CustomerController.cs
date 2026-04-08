@@ -24,7 +24,6 @@ namespace SV22T1020553.Shop.Controllers
             if (customer == null)
                 return RedirectToAction("Login", "Account");
 
-            // 1. SỬA Ở ĐÂY: LUÔN LUÔN nạp danh sách tỉnh khi mở trang Profile
             ViewBag.Provinces = await DictionaryDataService.ListProvincesAsync();
 
             var model = new CustomerProfileViewModel
@@ -53,7 +52,6 @@ namespace SV22T1020553.Shop.Controllers
 
             if (!ModelState.IsValid)
             {
-                // 2. SỬA Ở ĐÂY: Phải nạp lại danh sách tỉnh nếu người dùng nhập lỗi form
                 ViewBag.Provinces = await DictionaryDataService.ListProvincesAsync();
                 return View(model);
             }
